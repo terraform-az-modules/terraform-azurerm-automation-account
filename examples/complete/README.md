@@ -1,46 +1,15 @@
-<!-- BEGIN_TF_DOCS -->
+# Complete example
 
-# Terraform Azure Module Template
+This example calls the root module once and exercises account security, identities, optional CMK encryption, certificates, every connection form, credentials, Hybrid Workers, legacy and language packages, a runbook and schedule, source control, all variable types, a watcher, and a webhook.
 
-This directory contains an example usage of the **terraform-azure-module-template**. It demonstrates how to use the module with default settings or with custom configurations.
+Provide `resource_group_name`, `location`, and `automation_account_name`. When `key_vault_key_id` is set, provide exactly one value in `user_assigned_identity_ids`; that identity must have permission to use the Key Vault key.
 
----
+```bash
+terraform init
+terraform plan \
+  -var='resource_group_name=rg-example' \
+  -var='location=West Europe' \
+  -var='automation_account_name=aa-example-001'
+```
 
-## 📋 Requirements
-
-| Name      | Version   |
-|-----------|-----------|
-| Terraform | >= 1.6.6  |
-| Azurerm   | >= 3.116.0|
-
----
-
-## 🔌 Providers
-
-None specified in this example.
-
----
-
-## 📦 Modules
-
-None specified in this example.
-
----
-
-## 🏗️ Resources
-
-No resources are directly created in this example.
-
----
-
-## 🔧 Inputs
-
-No input variables are defined in this example.
-
----
-
-## 📤 Outputs
-
-No outputs are defined in this example.
-
-<!-- END_TF_DOCS -->
+No runbooks, schedules, or other Automation resources are created.
