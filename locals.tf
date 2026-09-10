@@ -2,5 +2,5 @@
 ## Locals
 ##-----------------------------------------------------------------------------
 locals {
-  label_order = var.label_order
+  user_assigned_identity_ids = var.identity == null ? toset([]) : var.identity.identity_ids
 }

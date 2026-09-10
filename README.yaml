@@ -1,49 +1,41 @@
 ---
-#
-# This is the canonical configuration for the `README.md`
-# Run `make readme` to rebuild the `README.md`
-#
-
-# Name of this project
-name : Terraform Azure Module Template
-
-# License of this project
+name: Terraform Azure Automation Account
 license: "APACHE"
-
-# Canonical GitHub repo
-github_repo: terraform-az-modules/terraform-module-template
-
-# Badges to display
+github_repo: terraform-az-modules/terraform-azurerm-automation-account
 badges:
   - name: "Terraform"
-    image: "https://img.shields.io/badge/Terraform-v0.13-green"
+    image: "https://img.shields.io/badge/Terraform-%3E%3D1.6.6-green"
     url: "https://www.terraform.io"
   - name: "Licence"
     image: "https://img.shields.io/badge/License-APACHE-blue.svg"
-    url: "LICENSE.md"
-  - name: "Changelog"
-    image: "https://img.shields.io/badge/Changelog-blue"
-    url: "CHANGELOG.md"
-
-# Prerequesties to display
+    url: "LICENSE"
 prerequesties:
   - name: Terraform
-    url: https://learn.hashicorp.com/terraform/getting-started/install.html
+    url: https://developer.hashicorp.com/terraform
     version: ">= 1.6.6"
-
 providers:
-  - name: azure
-    url: https://azure.microsoft.com/
-    version: ">= 3.116.0"
-
-#  description of this project
+  - name: azurerm
+    url: https://registry.terraform.io/providers/hashicorp/azurerm/latest
+    version: ">= 5.4.0"
 description: |-
-  Terraform Azure Module Template to create new modules using this as baseline
-
-# How to use this project
-# How to use this project
+  Reusable Terraform module for an Azure Automation Account and all Automation child
+  resources supported by AzureRM, with strongly typed optional maps, managed identities,
+  CMK encryption, networking controls, sensitive-value handling, and timeouts.
 usage: |-
-  Here are some examples of how you can use this module in your inventory structure:
   ```hcl
-    locals {}
-    ```
+  module "automation_account" {
+    source = "terraform-az-modules/automation-account/azurerm"
+
+    name                = "aa-app-prod-001"
+    resource_group_name = "rg-app-prod"
+    location            = "West Europe"
+
+    identity = {
+      type = "SystemAssigned"
+    }
+
+    local_authentication_enabled  = false
+    public_network_access_enabled = false
+    tags = { environment = "prod" }
+  }
+  ```
