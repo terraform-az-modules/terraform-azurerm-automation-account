@@ -235,7 +235,7 @@ resource "azurerm_automation_dsc_nodeconfiguration" "this" {
 
   lifecycle {
     precondition {
-      condition     = each.value.dsc_configuration_key == null || contains(keys(var.dsc_configurations), each.value.dsc_configuration_key)
+      condition     = try(each.value.dsc_configuration_key, null) == null || contains(keys(var.dsc_configurations), try(each.value.dsc_configuration_key, null))
       error_message = "dsc_configuration_key must reference an entry in dsc_configurations."
     }
   }
@@ -277,6 +277,44 @@ resource "azurerm_automation_hybrid_runbook_worker" "this" {
     create = each.value.timeouts.create
     read   = each.value.timeouts.read
     delete = each.value.timeouts.delete
+  }
+
+  lifecycle {
+    # Azure returns this resource ID fully lowercased. Resource IDs are
+    # case-insensitive, so suppress the resulting perpetual replacement.
+    ignore_changes = [vm_resource_id]
+  }
+}
+
+# Installs the supported extension-based (V2) Hybrid Worker on an Azure VM.
+# The VM must have a system-assigned managed identity and outbound HTTPS access
+# to the Azure Automation endpoints required for its region.
+resource "azurerm_virtual_machine_extension" "hybrid_worker" {
+  for_each = var.hybrid_runbook_worker_extensions
+
+  name = each.value.name
+  # Use the caller-supplied VM ID rather than the worker API response. Azure
+  # normalizes the response to lowercase, but AzureRM's VM ID parser expects
+  # case-sensitive resourceGroups/Microsoft.Compute/virtualMachines segments.
+  virtual_machine_id         = var.hybrid_runbook_workers[each.value.hybrid_worker_key].vm_resource_id
+  publisher                  = "Microsoft.Azure.Automation.HybridWorker"
+  type                       = "HybridWorkerFor${each.value.os_type}"
+  type_handler_version       = each.value.type_handler_version
+  auto_upgrade_minor_version = each.value.auto_upgrade_minor
+  automatic_upgrade_enabled  = each.value.automatic_upgrade
+  settings = jsonencode(merge(each.value.settings, {
+    AutomationAccountURL = azurerm_automation_account.this.hybrid_service_url
+  }))
+  protected_settings = length(keys(each.value.protected_settings)) == 0 ? null : jsonencode(each.value.protected_settings)
+  tags               = merge(var.tags, each.value.tags)
+
+  depends_on = [azurerm_automation_hybrid_runbook_worker.this]
+
+  lifecycle {
+    precondition {
+      condition     = contains(keys(var.hybrid_runbook_workers), each.value.hybrid_worker_key)
+      error_message = "hybrid_worker_key must reference an entry in hybrid_runbook_workers."
+    }
   }
 }
 

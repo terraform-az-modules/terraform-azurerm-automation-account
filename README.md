@@ -44,6 +44,7 @@ module "automation_account" {
 | `dsc_node_configurations` | `azurerm_automation_dsc_nodeconfiguration` |
 | `hybrid_runbook_workers` | `azurerm_automation_hybrid_runbook_worker` |
 | `hybrid_runbook_worker_groups` | `azurerm_automation_hybrid_runbook_worker_group` |
+| `hybrid_runbook_worker_extensions` | `azurerm_virtual_machine_extension` |
 | `job_schedules` | `azurerm_automation_job_schedule` |
 | `modules` | `azurerm_automation_module` |
 | `powershell72_modules` | `azurerm_automation_powershell72_module` |
@@ -97,7 +98,7 @@ All examples call `source = "../.."`; none defines a separate child module.
 
 All child-resource inputs are strongly typed `map(object(...))` values and default to `{}`. See [variables.tf](./variables.tf) for their complete schemas and the examples for practical configurations.
 
-The root inputs include non-secret development defaults to prevent interactive Terraform prompts. Override `name`, `resource_group_name`, and `location` for real deployments using module arguments or environment-specific `.tfvars` files. Values such as `replace-before-apply` and zero UUIDs in the complete example are explicit placeholders and must not be used for deployment.
+The root inputs include non-secret development defaults to prevent interactive Terraform prompts. Override `name`, `resource_group_name`, and `location` for real deployments using module arguments or environment-specific `.tfvars` files. Advanced features in the complete example that require secrets, external artifacts, or existing infrastructure are documented as commented opt-in blocks.
 
 Supported identity types are `SystemAssigned`, `UserAssigned`, and `SystemAssigned, UserAssigned`. A user-assigned identity used for encryption must also appear in `identity.identity_ids` and must have the required Key Vault permissions.
 

@@ -63,6 +63,7 @@ output "resource_ids" {
     dsc_node_configurations         = { for key, resource in azurerm_automation_dsc_nodeconfiguration.this : key => resource.id }
     hybrid_worker_groups            = { for key, resource in azurerm_automation_hybrid_runbook_worker_group.this : key => resource.id }
     hybrid_workers                  = { for key, resource in azurerm_automation_hybrid_runbook_worker.this : key => resource.id }
+    hybrid_worker_extensions        = { for key, resource in azurerm_virtual_machine_extension.hybrid_worker : key => resource.id }
     job_schedules                   = { for key, resource in azurerm_automation_job_schedule.this : key => resource.id }
     modules                         = { for key, resource in azurerm_automation_module.this : key => resource.id }
     powershell72_modules            = { for key, resource in azurerm_automation_powershell72_module.this : key => resource.id }

@@ -29,9 +29,12 @@ module "automation_account" {
   }
 
   job_schedules = {
-    "8f98ec7c-5dd2-4a2e-8d16-06c4a8a1ed91" = {
-      runbook_key  = "hello"
-      schedule_key = "daily"
+    hello_daily = {
+      # Azure requires a GUID, so derive one deterministically from stable names.
+      # Unlike uuid(), uuidv5() returns the same value on every plan.
+      job_schedule_id = uuidv5("dns", "${var.automation_account_name}.hello.daily")
+      runbook_key     = "hello"
+      schedule_key    = "daily"
     }
   }
 

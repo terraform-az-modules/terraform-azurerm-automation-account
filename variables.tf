@@ -263,12 +263,11 @@ variable "credentials" {
 
 variable "dsc_configurations" {
   type = map(object({
-    name                  = string
-    content_embedded      = string
-    dsc_configuration_key = optional(string)
-    description           = optional(string)
-    log_verbose           = optional(bool, false)
-    tags                  = optional(map(string), {})
+    name             = string
+    content_embedded = string
+    description      = optional(string)
+    log_verbose      = optional(bool, false)
+    tags             = optional(map(string), {})
     timeouts = optional(object({
       create = optional(string)
       read   = optional(string)
@@ -282,8 +281,9 @@ variable "dsc_configurations" {
 
 variable "dsc_node_configurations" {
   type = map(object({
-    name             = string
-    content_embedded = string
+    name                  = string
+    content_embedded      = string
+    dsc_configuration_key = optional(string)
     timeouts = optional(object({
       create = optional(string)
       read   = optional(string)
@@ -323,7 +323,30 @@ variable "hybrid_runbook_workers" {
     }), {})
   }))
   default     = {}
-  description = "Hybrid Runbook Workers referencing entries in hybrid_runbook_worker_groups."
+  description = "Extension-based Hybrid Runbook Worker registrations referencing entries in hybrid_runbook_worker_groups. Pair each worker with a hybrid_runbook_worker_extension entry."
+}
+
+variable "hybrid_runbook_worker_extensions" {
+  type = map(object({
+    hybrid_worker_key    = string
+    os_type              = string
+    name                 = optional(string, "HybridWorkerExtension")
+    type_handler_version = optional(string, "1.1")
+    auto_upgrade_minor   = optional(bool, true)
+    automatic_upgrade    = optional(bool, true)
+    settings             = optional(any, {})
+    protected_settings   = optional(any, {})
+    tags                 = optional(map(string), {})
+  }))
+  default     = {}
+  description = "Azure VM extensions that install supported extension-based Hybrid Workers. os_type must be Windows or Linux. AutomationAccountURL is added to settings automatically."
+
+  validation {
+    condition = alltrue([
+      for extension in var.hybrid_runbook_worker_extensions : contains(["Windows", "Linux"], extension.os_type)
+    ])
+    error_message = "Each Hybrid Worker extension os_type must be Windows or Linux."
+  }
 }
 
 variable "modules" {
@@ -516,7 +539,7 @@ variable "job_schedules" {
     }), {})
   }))
   default     = {}
-  description = "Associations between entries in runbooks and schedules. Map keys should be UUIDs unless job_schedule_id is set."
+  description = "Associations between entries in runbooks and schedules. Set job_schedule_id to a stable GUID, such as one produced by uuidv5; otherwise the map key must be a GUID."
 }
 
 variable "source_controls" {
