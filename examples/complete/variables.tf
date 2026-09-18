@@ -3,7 +3,7 @@
 ##-----------------------------------------------------------------------------
 variable "resource_group_name" {
   type        = string
-  default     = "test-automation-example"
+  default     = "automation-example"
   description = "Name label used by the resource-group module."
 }
 variable "location" {

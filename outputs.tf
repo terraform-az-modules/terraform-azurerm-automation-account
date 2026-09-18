@@ -64,22 +64,31 @@ output "resource_ids" {
     hybrid_worker_groups            = { for key, resource in azurerm_automation_hybrid_runbook_worker_group.this : key => resource.id }
     hybrid_workers                  = { for key, resource in azurerm_automation_hybrid_runbook_worker.this : key => resource.id }
     hybrid_worker_extensions        = { for key, resource in azurerm_virtual_machine_extension.hybrid_worker : key => resource.id }
-    job_schedules                   = { for key, resource in azurerm_automation_job_schedule.this : key => resource.id }
-    modules                         = { for key, resource in azurerm_automation_module.this : key => resource.id }
-    powershell72_modules            = { for key, resource in azurerm_automation_powershell72_module.this : key => resource.id }
-    python3_packages                = { for key, resource in azurerm_automation_python3_package.this : key => resource.id }
-    runbooks                        = { for key, resource in azurerm_automation_runbook.this : key => resource.id }
-    runtime_environments            = { for key, resource in azurerm_automation_runtime_environment.this : key => resource.id }
-    runtime_environment_packages    = { for key, resource in azurerm_automation_runtime_environment_package.this : key => resource.id }
-    schedules                       = { for key, resource in azurerm_automation_schedule.this : key => resource.id }
-    source_controls                 = { for key, resource in azurerm_automation_source_control.this : key => resource.id }
-    bool_variables                  = { for key, resource in azurerm_automation_variable_bool.this : key => resource.id }
-    datetime_variables              = { for key, resource in azurerm_automation_variable_datetime.this : key => resource.id }
-    int_variables                   = { for key, resource in azurerm_automation_variable_int.this : key => resource.id }
-    object_variables                = { for key, resource in azurerm_automation_variable_object.this : key => resource.id }
-    string_variables                = { for key, resource in azurerm_automation_variable_string.this : key => resource.id }
-    watchers                        = { for key, resource in azurerm_automation_watcher.this : key => resource.id }
-    webhooks                        = { for key, resource in azurerm_automation_webhook.this : key => resource.id }
+    job_schedules = {
+      for key, association in var.job_schedules : key => format(
+        "%s/jobSchedules/%s",
+        azurerm_automation_account.this.id,
+        one([
+          for managed in azurerm_automation_runbook.this[association.runbook_key].job_schedule : managed.job_schedule_id
+          if managed.schedule_name == azurerm_automation_schedule.this[association.schedule_key].name
+        ])
+      )
+    }
+    modules                      = { for key, resource in azurerm_automation_module.this : key => resource.id }
+    powershell72_modules         = { for key, resource in azurerm_automation_powershell72_module.this : key => resource.id }
+    python3_packages             = { for key, resource in azurerm_automation_python3_package.this : key => resource.id }
+    runbooks                     = { for key, resource in azurerm_automation_runbook.this : key => resource.id }
+    runtime_environments         = { for key, resource in azurerm_automation_runtime_environment.this : key => resource.id }
+    runtime_environment_packages = { for key, resource in azurerm_automation_runtime_environment_package.this : key => resource.id }
+    schedules                    = { for key, resource in azurerm_automation_schedule.this : key => resource.id }
+    source_controls              = { for key, resource in azurerm_automation_source_control.this : key => resource.id }
+    bool_variables               = { for key, resource in azurerm_automation_variable_bool.this : key => resource.id }
+    datetime_variables           = { for key, resource in azurerm_automation_variable_datetime.this : key => resource.id }
+    int_variables                = { for key, resource in azurerm_automation_variable_int.this : key => resource.id }
+    object_variables             = { for key, resource in azurerm_automation_variable_object.this : key => resource.id }
+    string_variables             = { for key, resource in azurerm_automation_variable_string.this : key => resource.id }
+    watchers                     = { for key, resource in azurerm_automation_watcher.this : key => resource.id }
+    webhooks                     = { for key, resource in azurerm_automation_webhook.this : key => resource.id }
   }
   description = "Resource IDs of all optional Automation Account child resources, grouped by type and keyed by input map key."
 }

@@ -531,15 +531,9 @@ variable "job_schedules" {
     parameters              = optional(map(string), {})
     run_on                  = optional(string)
     run_on_worker_group_key = optional(string)
-    job_schedule_id         = optional(string)
-    timeouts = optional(object({
-      create = optional(string)
-      read   = optional(string)
-      delete = optional(string)
-    }), {})
   }))
   default     = {}
-  description = "Associations between entries in runbooks and schedules. Set job_schedule_id to a stable GUID, such as one produced by uuidv5; otherwise the map key must be a GUID."
+  description = "Associations published inline with their referenced runbooks and schedules, keyed by a stable Terraform key."
 }
 
 variable "source_controls" {

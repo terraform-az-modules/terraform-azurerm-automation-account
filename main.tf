@@ -430,6 +430,8 @@ resource "azurerm_automation_runtime_environment_package" "this" {
 resource "azurerm_automation_runbook" "this" {
   for_each = var.runbooks
 
+  # `content` is sent to Azure as the published runbook body. Keeping it on
+  # this resource makes both publication and later script updates declarative.
   name                     = each.value.name
   resource_group_name      = azurerm_automation_account.this.resource_group_name
   automation_account_name  = azurerm_automation_account.this.name
@@ -442,6 +444,17 @@ resource "azurerm_automation_runbook" "this" {
   log_activity_trace_level = each.value.log_activity_trace_level
   runtime_environment_name = each.value.runtime_environment_key == null ? each.value.runtime_environment_name : azurerm_automation_runtime_environment.this[each.value.runtime_environment_key].name
   tags                     = merge(var.tags, each.value.tags)
+
+  # Publish the schedule association with the runbook. This avoids the
+  # standalone job-schedule create race that can repeatedly return HTTP 409.
+  dynamic "job_schedule" {
+    for_each = { for key, association in var.job_schedules : key => association if association.runbook_key == each.key }
+    content {
+      schedule_name = azurerm_automation_schedule.this[job_schedule.value.schedule_key].name
+      parameters    = job_schedule.value.parameters
+      run_on        = job_schedule.value.run_on_worker_group_key == null ? job_schedule.value.run_on : azurerm_automation_hybrid_runbook_worker_group.this[job_schedule.value.run_on_worker_group_key].name
+    }
+  }
 
   dynamic "draft" {
     for_each = each.value.draft == null ? [] : [each.value.draft]
@@ -504,6 +517,13 @@ resource "azurerm_automation_runbook" "this" {
       condition     = !(each.value.runtime_environment_key != null && each.value.runtime_environment_name != null)
       error_message = "Set at most one of runtime_environment_key or runtime_environment_name for a runbook."
     }
+    precondition {
+      condition = alltrue([
+        for association in values(var.job_schedules) : !(association.run_on != null && association.run_on_worker_group_key != null)
+        if association.runbook_key == each.key
+      ])
+      error_message = "Set at most one of run_on or run_on_worker_group_key for each job schedule."
+    }
   }
 }
 
@@ -535,31 +555,6 @@ resource "azurerm_automation_schedule" "this" {
     read   = each.value.timeouts.read
     update = each.value.timeouts.update
     delete = each.value.timeouts.delete
-  }
-}
-
-resource "azurerm_automation_job_schedule" "this" {
-  for_each = var.job_schedules
-
-  resource_group_name     = azurerm_automation_account.this.resource_group_name
-  automation_account_name = azurerm_automation_account.this.name
-  runbook_name            = azurerm_automation_runbook.this[each.value.runbook_key].name
-  schedule_name           = azurerm_automation_schedule.this[each.value.schedule_key].name
-  job_schedule_id         = coalesce(each.value.job_schedule_id, each.key)
-  parameters              = each.value.parameters
-  run_on                  = each.value.run_on_worker_group_key == null ? each.value.run_on : azurerm_automation_hybrid_runbook_worker_group.this[each.value.run_on_worker_group_key].name
-
-  timeouts {
-    create = each.value.timeouts.create
-    read   = each.value.timeouts.read
-    delete = each.value.timeouts.delete
-  }
-
-  lifecycle {
-    precondition {
-      condition     = !(each.value.run_on != null && each.value.run_on_worker_group_key != null)
-      error_message = "Set at most one of run_on or run_on_worker_group_key for a job schedule."
-    }
   }
 }
 

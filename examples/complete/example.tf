@@ -114,32 +114,96 @@ module "automation_account" {
     }
   }
 
-  runbooks = {
-    operations = {
-      name         = "operations"
-      runbook_type = "PowerShell"
-      log_progress = true
-      log_verbose  = true
-      content      = "Write-Output 'operations'"
-    }
+ runbooks = {
+  operations = {
+    name         = "operations"
+    runbook_type = "PowerShell"
+    log_progress = true
+    log_verbose  = true
+
+    content = <<-POWERSHELL
+      Write-Output "========================================"
+      Write-Output "Operations Runbook"
+      Write-Output "========================================"
+
+      Write-Output "Hostname: $([System.Net.Dns]::GetHostName())"
+      Write-Output "Username: $([System.Environment]::UserName)"
+      Write-Output "PowerShell Version: $($PSVersionTable.PSVersion)"
+
+      $computer = Get-CimInstance Win32_OperatingSystem
+
+      Write-Output "Computer Name: $($computer.CSName)"
+      Write-Output "OS Name: $($computer.Caption)"
+      Write-Output "Last Boot Time: $($computer.LastBootUpTime)"
+
+      Write-Output "Operations runbook completed successfully."
+    POWERSHELL
   }
+
+  system_check = {
+    name         = "system-check"
+    runbook_type = "PowerShell"
+    log_progress = true
+    log_verbose  = true
+
+    content = <<-POWERSHELL
+      Write-Output "========================================"
+      Write-Output "System Check Runbook"
+      Write-Output "========================================"
+
+      Write-Output "Checking services..."
+
+      Get-Service | Where-Object {
+        $_.Status -eq "Running"
+      } | Select-Object -First 10 | ForEach-Object {
+        Write-Output "Running Service: $($_.Name)"
+      }
+
+      Write-Output "System check completed successfully."
+    POWERSHELL
+  }
+
+  disk_check = {
+    name         = "disk-check"
+    runbook_type = "PowerShell"
+    log_progress = true
+    log_verbose  = true
+
+    content = <<-POWERSHELL
+      Write-Output "========================================"
+      Write-Output "Disk Check Runbook"
+      Write-Output "========================================"
+
+      Get-PSDrive -PSProvider FileSystem | ForEach-Object {
+        Write-Output "Drive: $($_.Name)"
+        Write-Output "Used: $([math]::Round(($_.Used / 1GB), 2)) GB"
+        Write-Output "Free: $([math]::Round(($_.Free / 1GB), 2)) GB"
+      }
+
+      Write-Output "Disk check completed successfully."
+    POWERSHELL
+  }
+}
+
+  
 
   schedules = {
     hourly = {
       name      = "hourly"
       frequency = "Hour"
       interval  = 1
-      timezone  = "UTC"
+      # Match Azure's canonical UTC timezone value to avoid perpetual drift.
+      timezone = "Etc/UTC"
     }
   }
 
   job_schedules = {
     operations_hourly = {
-      # Azure requires a GUID, so derive one deterministically from stable names.
-      # Unlike uuid(), uuidv5() returns the same value on every plan.
-      job_schedule_id = uuidv5("dns", "${var.automation_account_name}.operations.hourly")
-      runbook_key     = "operations"
-      schedule_key    = "hourly"
+      runbook_key  = "operations"
+      schedule_key = "hourly"
+      # Resolve the group by Terraform key so the scheduled test runs on the
+      # fully managed extension-based Hybrid Worker rather than in Azure.
+      run_on_worker_group_key = "operations"
     }
   }
 
